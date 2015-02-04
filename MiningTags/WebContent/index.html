@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>ReviewScope</title>
+<link rel="stylesheet" href="css/miningtags.css"/>
+<link rel="stylesheet" href="css/bootstrap.css"/>
+<script src="javascript/jquery-1.11.2.min.js"></script>
+
+
+
+<p style="position: absolute; right: 0; top: 0" id="status"></p>
+<form id="form">
+
+<div style="text-align: center;width:960px;">
+  <div id="custom-area">
+  <table style="margin-left:20px;">
+	  <tr>
+	  <td rowspan="2">
+	  <img src="img/logo.png" alt="logo" style="width:200;height:100px;">
+	  </td>
+	  	<td>
+	    	<div class="input-group" style="padding-top:10px; margin-bottom:10px;padding-left:40px;width:660px;">
+	      	<span class="input-group-addon">URL1</span>
+	      	<input type="text" name="url1" class="form-control" placeholder="URL1">
+	    	</div>
+	    </td>
+    <td>
+    <button type="button" id="go" class="btn btn-success" style="margin-left:40px;width:100px;">Compare</button>
+	</td>
+	   </tr>
+    <tr>
+    	<td>
+	    	<div class="input-group" style="margin-bottom:10px;padding-left:40px;width:660px;">
+	      	<span class="input-group-addon">URL2</span>
+	      	<input type="text" name="url2" class="form-control" placeholder="URL2">
+	    	</div>
+    	</td>
+    	 <td>
+	   	 <button id="refresh" type="button" class="btn btn-success" style="margin-left:40px;width:100px;background-color:#63B8FF;border-color: #63B8FF;">Reset</button>
+		</td>
+	  </tr>
+</table>
+
+
+<!--<button id="go" type="button">Go!</button>&nbsp;<button id="refresh" type="button">Refresh!</button>-->
+
+  </div>
+</div>
+<hr style="clear: both;margin-left:20px;">
+	<table style="margin-left:20px;">
+		<tr>
+		<td></td>
+		<td align=center><font face="微软雅黑"><B>Distinguishing Review Tags:</B></font></td>
+		</tr>
+		<tr>
+			<td align=center><div id="vis"></div></td>
+			<td><textarea id="relevance" style="float:left;height:354px;width:350px;"></textarea></td>
+		</tr>
+	</table>
+<hr style="clear: both;margin-left:20px;">
+
+
+<div style="float: left;margin-left:20px;display:none;">
+  <p><label>Spiral:</label>
+    <label for="archimedean"><input type="radio" name="spiral" id="archimedean" value="archimedean" checked="checked"> Archimedean</label>
+    <label for="rectangular"><input type="radio" name="spiral" id="rectangular" value="rectangular"> Rectangular</label>
+  <p><label for="scale">Scale:</label>
+    <label for="scale-log"><input type="radio" name="scale" id="scale-log" value="log" checked="checked"> log n</label>
+    <label for="scale-sqrt"><input type="radio" name="scale" id="scale-sqrt" value="sqrt"> √n</label>
+    <label for="scale-linear"><input type="radio" name="scale" id="scale-linear" value="linear"> n</label>
+  <p><label for="font">Font:</label> <input type="text" id="font" value="Impact">
+</div>
+
+<div id="angles" style="float:left;display:none;">
+  <p><input type="number" id="angle-count" value="5" min="1"> <label for="angle-count">orientations</label>
+    <label for="angle-from">from</label> <input type="number" id="angle-from" value="0" min="-90" max="90">°
+    <label for="angle-to">to</label> <input type="number" id="angle-to" value="0" min="-90" max="90"> °
+</div>
+<div style="display:none;">
+  <p><label for="max">Number of words:</label> <input type="number" value="250" min="1" id="max">
+  <!--<p><label for="per-line"><input type="checkbox" id="per-line"> One word per line</label>-->
+  <!--<p><label for="colours">Colours:</label> <a href="#" id="random-palette">get random palette</a>-->
+  <p><label>Download:</label>
+    <a id="download-svg" href="#" target="_blank">SVG</a> |
+    <a id="download-png" href="#" target="_blank">PNG</a>
+</div>
+</form>
+<script>
+var miningResult;//挖掘结构集
+var mapFontSizes ;//文字云数据大小集合
+var names;//文字云数据
+var highlights;//标签高亮数据
+$("#go").click(function(){
+	$("#go").attr("disabled","disabled");
+	if($("input[name='url1']").first().val().trim()==""){
+		$("input[name='url1']").first().focus();
+		$("#go").removeAttr("disabled");
+		alert("URL1不能为空");
+		return false;
+	}
+	if($("input[name='url2']").first().val().trim()==""){
+		$("input[name='url2']").first().focus();
+		$("#go").removeAttr("disabled");
+		alert("URL2不能为空");
+		return false;
+	}
+	$("#selected").val("");
+	$("#selected").val("");
+	$("#relevance").val("");
+	var url1 = $("input[name='url1']").first().val().trim();
+	var url2 = $("input[name='url2']").first().val().trim();
+	$.getJSON("mining?url1="+url1+"&url2="+url2, function(json){
+	    refresh = 0;
+	 	miningResult = json;
+		var wordlist = miningResult.wordlist;
+		names = "";
+		var m = new Map();
+		for (var i = 0; i < wordlist.length; ++i) {
+			var str = wordlist[i];
+			var strs = str.split(",");
+			if (strs[1] < 1) {
+				continue;
+			}
+			names = names + "," + strs[0];
+			m.put(strs[0],strs[1]);
+		}
+		names = names.substring(1, names.length);
+		mapFontSizes = m;
+		highlights=miningResult.highlights;
+		load(names);
+		$("#go").removeAttr("disabled");
+	});
+	})
+
+	$("#refresh").click(function() {
+		$("#selected").val("");
+		$("#relevance").val("");
+		if (names) {
+			load(names);
+		} else {
+			$.getJSON("mining-tag.json", function(json) {
+				miningResult = json;
+				var wordlist = miningResult.wordlist;
+				names = "";
+				var m = new Map();
+				for (var i = 0; i < wordlist.length; ++i) {
+					var str = wordlist[i];
+					var strs = str.split(",");
+					names = names + "," + strs[0];
+					m.put(strs[0],strs[1]);
+				}
+				names = names.substring(1, names.length);
+				mapFontSizes = m;
+				highlights=miningResult.highlights;
+				load(names);
+			});
+		}
+	});
+</script>
+<script src="javascript/d3.js"></script>
+<script src="javascript/unicode.js"></script>
+<script src="javascript/d3.layout.cloud.js"></script>
+<script src="javascript/cloud.js"></script>
+<!--  <script src="javascript/cloud2.js"></script>-->
+
+
+

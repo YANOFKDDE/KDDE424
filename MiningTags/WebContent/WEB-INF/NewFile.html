@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+<script>
+function Map(){  
+	   this.map    =  new Object();  
+	   this.length = 0;  
+	    
+	   this.size = function(){  
+	       return this.length;  
+	   }  
+	    
+	   this.put = function(key, value){  
+	       
+	      if( !this.map['_' + key])  
+	        {  
+	             ++this.length;  
+	        }  
+	       
+	      this.map['_' + key] = value;  
+	      
+	   }  
+	    
+	   this.remove = function(key){  
+	        
+	       if(this.map['_' + key])  
+	      {  
+	           
+	          --this.length;  
+	        return delete this.map['_' + key];  
+	      }  
+	      else  
+	      {  
+	          return false;  
+	      }  
+	   }  
+	    
+	   this.containsKey = function(key){  
+	     
+	     return this.map['_' + key] ? true:false;  
+	    
+	   }  
+	     
+	   this.get = function(key){     
+	   
+	      return this.map['_' + key] ? this.map['_' + key]:null;  
+	   
+	   }  
+	  
+	  
+	 this.inspect=function(){     
+	     var str = '';  
+	      
+	     for(var each in this.map)  
+	     {  
+	          str+= '\n'+ each + '  Value:'+ this.map[each];  
+	     }  
+	      
+	     return str;  
+	   }  
+	      
+	}  
+	var m = new Map();
+	m.put("宝宝","JJSSSSS");
+	m.put("宝宝质量不错","JJSSSSS");
+	alert(m.get("宝宝"));
+</script>
+</body>
+</html>
